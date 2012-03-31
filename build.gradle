@@ -1,3 +1,199 @@
-task wrapper(type:Wrapper) {
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath(
+      'org.apache.commons:commons-lang3:3.1',
+      'org.apache.commons:commons-vfs2:2.0',
+    )
+  }
+}
+
+import org.apache.commons.lang3.SystemUtils
+import org.apache.commons.vfs2.FileObject
+import org.apache.commons.vfs2.FileSystemManager
+import org.apache.commons.vfs2.Selectors
+import org.apache.commons.vfs2.VFS
+
+apply plugin: 'eclipse'
+apply plugin: 'groovy'
+apply plugin: 'idea'
+apply plugin: 'maven'
+
+group = 'com.connorgarvey.gradle'
+version = '0.1-SNAPSHOT'
+
+repositories { 
+  mavenCentral()
+}
+
+dependencies {
+  groovy localGroovy()
+  compile gradleApi()
+  compile(
+    'commons-io:commons-io:1.3.2',
+    'org.apache.commons:commons-compress:1.3',
+    'org.apache.commons:commons-lang3:3.1',
+    'org.apache.commons:commons-vfs2:2.0',
+  )
+  testCompile(
+    'org.spockframework:spock-core:0.6-groovy-1.8',
+    'org.gmock:gmock:0.8.2',
+  )
+}
+
+task integrationTest(type:IntegrationTestTask, dependsOn:[build, install]) << { }
+
+task wrapper(type: Wrapper) {
   gradleVersion = '1.0-milestone-9'
+}
+
+class IntegrationTestTask extends DefaultTask {
+    private void appendOutput(InputStream inputStream, Appendable builder) {
+        String s = null
+        BufferedReader input = new BufferedReader(new InputStreamReader(inputStream))
+        while ((s = input.readLine()) != null) {
+            builder.append(s + '\n')
+        }
+    }
+    
+    private void assertFilesIdentical(File expected, File actual) {
+        Iterator<String> expectedLineIt = expected.readLines().iterator()
+        if (!actual.exists()) throw new AssertionError("File does not exist, but should: ${actual.path}")
+        actual.eachLine { actualLine, index ->
+            if (!expectedLineIt.hasNext()) {
+                throw makeFileDifferenceError(expected, actual, 'The actual file is too long')
+            }
+            String expectedLine = expectedLineIt.next()
+            if (expectedLine != actualLine) {
+                throw makeFileDifferenceError(expected, actual, """Files differed on line ${index}
+Expected: "${expectedLine}"
+Actual:   "${actualLine}" """)
+            }
+        }
+        if (expectedLineIt.hasNext()) {
+            throw makeFileDifferenceError(expected, actual, 'The actual file is not long enough')
+        }
+    }
+    
+    /**
+     * Asserts that all expected files exist, recursively, and asserst that the contents of generated files are as
+     * expected
+     * @param expectedPath the path of the expected file(s)
+     * @param actualPath the path of the actual file(s)
+     */
+    private void assertExpectedPathsIdentical(String expectedPath, String actualPath) {
+        File actual = new File(actualPath)
+        File expected = new File(expectedPath)
+        if (expected.isDirectory()) {
+            assert actual.exists()
+            for (child in expected.list()) {
+                assertExpectedPathsIdentical(pathJoin(expectedPath, child), pathJoin(actualPath, child))
+            }
+        }
+        else {
+            assertFilesIdentical(expected , actual)
+        }
+    }
+    
+    private void buildFreepaasPackage() {
+        String directory = new File(['src', 'integrationTest', 'grailsProject'].join(File.separator)).canonicalPath
+        String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
+        Process process = "${directory}${File.separator}gradlew${extension} --debug clean freepaas".
+                execute(null, new File(directory))
+        StringBuilder output = new StringBuilder()
+        appendOutput(process.inputStream, output)
+        appendOutput(process.errorStream, output)
+        process.waitFor()
+        if (process.exitValue() != 0) {
+            println output
+            throw new IllegalStateException('Integration test failed. See above for output.')
+        }
+    }
+    
+    private void clean() {
+        File folder = new File([project.buildDir.toString(), 'integrationTest'].join(File.separator))
+        if (folder.exists()) assert folder.deleteDir()
+    }
+    
+    /**
+     * Creates an error describing a difference between files.<br>
+     * Note: This must be public so that closures that use it can see it.
+     * @param expected the expected file
+     * @param actual the actual file
+     * @param message a message describing the difference 
+     * @return the generated error
+     */
+    Throwable makeFileDifferenceError(File expected, File actual, String message) {
+        new AssertionError("""A generated file is incorrect.
+
+Expected file: ${expected.path}
+Actual file: ${actual.path}
+
+${message}""")
+    }
+    
+    private String pathJoin(String... parts) {
+        Arrays.asList(parts).join(File.separator)
+    }
+    
+    private unzip(String zipPath, String destinationPath) {
+        vfsTypeCopy(zipPath, 'zip:file', destinationPath, 'file')
+    }
+    
+    private untargz(String targzPath, String destinationPath) {
+        vfsTypeCopy(targzPath, 'tgz:file', destinationPath, 'file')
+    }
+    
+    private vfsCopy(String originUri, String destinationUri) {
+        FileSystemManager manager = VFS.manager
+        FileObject origin = manager.resolveFile(originUri)
+        FileObject destination = manager.resolveFile(destinationUri)
+        destination.copyFrom(origin, Selectors.SELECT_ALL)
+    }
+    
+    private vfsTypeCopy(String originPath, String originType, String destinationPath, String destinationType) {
+        originPath = new File(originPath).canonicalPath
+        destinationPath = new File(destinationPath).canonicalPath
+        vfsCopy("${originType}://${originPath}", "${destinationType}://${destinationPath}")
+    }
+    
+    private void verifyControl(String controlPath) {
+        assertExpectedPathsIdentical(pathJoin('src', 'integrationTest', 'expectedFreepaas', 'control'), controlPath)
+    }
+    
+    private void verifyData(String dataPath) {
+        assertExpectedPathsIdentical(pathJoin('src', 'integrationTest', 'expectedFreepaas', 'data'), dataPath)
+    }
+    
+    private void verifyFreepaas(String path) {
+        File folder = new File(path)
+        assert folder.exists()
+        String[] names = folder.list()
+        Set<String> expectedNames = ['control.tar.gz', 'data.tar.gz'] as Set
+        for (name in names) assert expectedNames.remove(name)
+        assert expectedNames.isEmpty()
+    }
+    
+    private void verifyFreepaasPackage() {
+        String integrationTest = pathJoin(project.buildDir.toString(), 'integrationTest')
+        String freepaas = pathJoin(integrationTest, 'freepaas')
+        untargz(pathJoin('src', 'integrationTest', 'grailsProject', 'build', 'freepaas',
+                'freepaasGrailsTestProject-freepaas-1.0-fpp.tar.gz'), freepaas)
+        verifyFreepaas(freepaas)
+        String controlPath = pathJoin(freepaas, 'control')
+        String dataPath = pathJoin(freepaas, 'data')
+        untargz(pathJoin(freepaas, 'control.tar.gz'), controlPath)
+        verifyControl(controlPath)
+        untargz(pathJoin(freepaas, 'data.tar.gz'), dataPath)
+        verifyData(dataPath)
+    }
+    
+    @TaskAction
+    void integrationTest() {
+        buildFreepaasPackage()
+        clean()
+        verifyFreepaasPackage()
+    }
 }
