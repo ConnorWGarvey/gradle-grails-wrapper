@@ -7,6 +7,8 @@ import org.apache.commons.vfs2.Selectors
 import org.apache.commons.vfs2.VFS
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.tasks.Exec
 
 /**
  * @author Connor Garvey
@@ -15,21 +17,29 @@ import org.gradle.api.Project
 class GrailsPlugin implements Plugin<Project> {
   
   private void addTask(Project project, String target) {
-    project.task(target) << {
+    Task task = project.task([type:Exec], target) {
       project.grails.configure()
-      build(project, target)
+      String grailsFolder = makeGrailsPath(project.grails.version)
+      String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
+      commandLine Path.join(grailsFolder, 'bin', "grails${extension}"), '-plain-output', target
+      standardInput System.in
     }
+    task.dependsOn('install-grails')
   }
   
   @Override
   public void apply(Project project) {
     configure(project)
+    project.task('install-grails') << {
+      project.grails.configure()
+      download(project.grails.version)
+    }
     addTask(project, 'war')
     addTask(project, 'create-app')
   }
   
   private void build(Project project, String target) {
-    String grailsFolder = download(project.grails.version)
+    String grailsFolder = makeGrailsPath(project.grails.version)
     String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
     Process process = "${Path.join(grailsFolder, 'bin', 'grails' + extension)} -plain-output ${target}".execute()
     String s = null
@@ -64,13 +74,15 @@ class GrailsPlugin implements Plugin<Project> {
     String url =
         "http://dist.springframework.org.s3.amazonaws.com/release/GRAILS/grails-${version}.zip"
     File zipFile = new File(Path.join(homePath, 'archive', "${version}.zip"))
-    if (!zipFile.parentFile.exists() && !zipFile.parentFile.mkdirs()) {
-      throw new IllegalStateException("Could not create ${zipFile.path}")
+    if (!zipFile.exists()) {
+      if (!zipFile.parentFile.exists() && !zipFile.parentFile.mkdirs()) {
+        throw new IllegalStateException("Could not create ${zipFile.path}")
+      }
+      OutputStream file = new FileOutputStream(zipFile)
+      OutputStream out = new BufferedOutputStream(file)
+      out << new URL(url).openStream()
+      out.close()
     }
-    OutputStream file = new FileOutputStream(zipFile)
-    OutputStream out = new BufferedOutputStream(file)
-    out << new URL(url).openStream()
-    out.close()
     FileObject zip = manager.resolveFile("zip:file://${zipFile.path}")
     destination.copyFrom(zip, Selectors.SELECT_ALL)
     makeGrailsExecutable(grailsPath)
@@ -83,5 +95,9 @@ class GrailsPlugin implements Plugin<Project> {
     }
     File file = new File(Path.join(path, 'bin', 'grails'))
     file.executable = true
+  }
+  
+  private String makeGrailsPath(String version) {
+    Path.join(SystemUtils.userHome.path, '.gradlegrails', 'grails', "grails-${version}")
   }
 }
