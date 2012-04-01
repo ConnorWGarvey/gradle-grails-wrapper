@@ -66,13 +66,18 @@ class GrailsPlugin implements Plugin<Project> {
   private String download(String version) {
     FileSystemManager manager = VFS.manager
     String homePath = Path.join(SystemUtils.userHome.path, '.gradlegrails')
-    FileObject destination = manager.resolveFile("file://" + Path.join(homePath, 'grails'))
-    String grailsPath = Path.join(destination.name.path, "grails-${version}")
-    if (new File(grailsPath).exists()) {
-      return grailsPath
+    FileObject destination = manager.resolveFile("file://" + Path.join(homePath, 'grails', version))
+    if (destination.exists()) {
+      return destination.name.path
     }
-    String url =
-        "http://dist.springframework.org.s3.amazonaws.com/release/GRAILS/grails-${version}.zip"
+    File zipFile = downloadZip(homePath, version)
+    FileObject zip = manager.resolveFile("zip:file://${zipFile.path}")
+    unzipGrails(homePath, zip, destination)
+    makeGrailsExecutable(destination.name.path)
+    return destination.name.path
+  }
+  
+  private File downloadZip(String homePath, String version) {
     File zipFile = new File(Path.join(homePath, 'archive', "${version}.zip"))
     if (!zipFile.exists()) {
       if (!zipFile.parentFile.exists() && !zipFile.parentFile.mkdirs()) {
@@ -80,13 +85,12 @@ class GrailsPlugin implements Plugin<Project> {
       }
       OutputStream file = new FileOutputStream(zipFile)
       OutputStream out = new BufferedOutputStream(file)
-      out << new URL(url).openStream()
+      out << new URL(
+          "http://dist.springframework.org.s3.amazonaws.com/release/GRAILS/grails-${version}.zip").
+          openStream()
       out.close()
     }
-    FileObject zip = manager.resolveFile("zip:file://${zipFile.path}")
-    destination.copyFrom(zip, Selectors.SELECT_ALL)
-    makeGrailsExecutable(grailsPath)
-    return grailsPath
+    return zipFile
   }
   
   private void makeGrailsExecutable(String path) {
@@ -98,6 +102,20 @@ class GrailsPlugin implements Plugin<Project> {
   }
   
   private String makeGrailsPath(String version) {
-    Path.join(SystemUtils.userHome.path, '.gradlegrails', 'grails', "grails-${version}")
+    Path.join(SystemUtils.userHome.path, '.gradlegrails', 'grails', version)
+  }
+  
+  private void unzipGrails(String homePath, FileObject zip, FileObject destination) {
+    FileSystemManager manager = VFS.manager
+    FileObject temporary = manager.resolveFile(Path.join(homePath, 'tmp'))
+    temporary.copyFrom(zip, Selectors.SELECT_ALL)
+    FileObject grailsHome = temporary
+    while (!grailsHome.children.any { it.name.baseName == 'bin' }) {
+      grailsHome = grailsHome.children[0]
+    }
+    for (child in grailsHome.children) {
+      manager.resolveFile(Path.join(destination.name.path, child.name.baseName)).copyFrom(child, Selectors.SELECT_ALL)
+    }
+    temporary.delete(Selectors.SELECT_ALL)
   }
 }
