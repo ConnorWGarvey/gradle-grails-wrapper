@@ -9,13 +9,11 @@ Using the plugin
     buildscript {
       repositories {
         mavenCentral()
-        maven { url 'http://connorwgarvey.github.com/gradle-grails-plugin/repo' }
+        maven { url 'http://connorwgarvey.github.com/gradle-grails-wrapper/repo/' }
       }
 
       dependencies {
-        classpath(
-          'com.connorgarvey.gradle:gradle-grails-wrapper:0.1',
-        )
+        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:0.1-SNAPSHOT'
       }
     }
     
