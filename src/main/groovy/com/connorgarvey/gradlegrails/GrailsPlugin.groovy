@@ -21,10 +21,30 @@ class GrailsPlugin implements Plugin<Project> {
       project.grails.configure()
       String grailsFolder = makeGrailsPath(project.grails.version)
       String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
-      commandLine Path.join(grailsFolder, 'bin', "grails${extension}"), '-plain-output', target
+      List<String> args = collectArguments(project)
+      List<String> command =[
+        Path.join(grailsFolder, 'bin', "grails${extension}"),
+        '-plain-output',
+        target
+      ]
+      command.addAll(args)
+      commandLine command
       standardInput System.in
     }
     task.dependsOn('install-grails')
+  }
+  
+  private List<String> collectArguments(Project project) {
+    List<String> result = []
+    int index = 0
+    try {
+      while (true) {
+        result << project."arg${index++}"
+      }
+    }
+    catch (MissingPropertyException ex) {
+    }
+    return result
   }
   
   @Override
@@ -34,8 +54,59 @@ class GrailsPlugin implements Plugin<Project> {
       project.grails.configure()
       download(project.grails.version)
     }
-    addTask(project, 'war')
-    addTask(project, 'create-app')
+    [
+      'add-proxy',
+      'bootstrap',
+      'bug-report',
+      'clean',
+      'clear-proxy',
+      'compile',
+      'console',
+      'create-app',
+      'create-controller',
+      'create-domain-class',
+      'create-filters',
+      'create-hibernate-cfg-xml',
+      'create-integration-test',
+      'create-plugin',
+      'create-scaffold-controller',
+      'create-script',
+      'create-service',
+      'create-tag-lib',
+      'create-unit-test',
+      'dependency-report',
+      'doc',
+      'generate-all',
+      'generate-controller',
+      'generate-views',
+      'help',
+      'init',
+      'install-dependency',
+      'install-plugin',
+      'install-templates',
+      'integrate-with',
+      'interactive',
+      'list-plugin-updates',
+      'list-plugins',
+      'migrate-docs',
+      'package',
+      'package-plugin',
+      'plugin-info',
+      'refresh-dependencies',
+      'remove-proxy',
+      'run-app',
+      'run-script',
+      'run-war',
+      'schema-export',
+      'set-proxy',
+      'set-version',
+      'shell',
+      'stats',
+      'test-app',
+      'uninstall-plugin',
+      'upgrade',
+      'war',
+    ].each { addTask(project, it) }
   }
   
   private void build(Project project, String target) {
