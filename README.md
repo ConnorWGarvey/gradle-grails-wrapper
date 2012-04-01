@@ -9,6 +9,7 @@ Using the plugin
     buildscript {
       repositories {
         mavenCentral()
+        maven { url 'http://connorwgarvey.github.com/gradle-grails-plugin/repo' }
       }
 
       dependencies {

@@ -43,40 +43,53 @@ dependencies {
   )
 }
 
-task publish(dependsOn:[build]) << {
+task writePom << {
+  pom {
+    project {
+      inceptionYear '2012'
+      licenses {
+        license {
+          name 'The Apache Software License, Version 2.0'
+          url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          distribution 'repo'
+        }
+      }
+    }
+  }.writeTo("${buildDir}/libs/${project.name}-${project.version}.pom")
+}
+
+task publish(dependsOn:[build, writePom]) << {
   def sep = File.separator
   File checkoutFolder = new File(project.buildDir.canonicalPath + sep + 'artifactPublish')
   File checkoutProjectFolder = new File(checkoutFolder.canonicalPath + sep + 'gradle-grails-wrapper')
-  File checkoutWebFolder = new File(checkoutProjectFolder.canonicalPath + sep + 'web')
+  File checkoutRepositoryFolder = new File(checkoutProjectFolder.canonicalPath + sep + 'repo')
+  File checkoutPublishFolder = new File(checkoutRepositoryFolder.path + sep +
+      project.group.split('\\.').join(sep) + sep + project.name + sep + project.version)
   assert checkoutFolder.deleteDir()
   checkoutFolder.mkdirs()
-  def commandList = ['git', 'clone', 'git@github.com:ConnorWGarvey/gradle-grails-wrapper.git', '-b',
-      'gh-pages']
-  logger.info(commandList.join(' '))
-  def process = commandList.execute([], checkoutFolder)
-  process.waitFor()
-  assert process.exitValue() == 0
-  assert checkoutWebFolder.deleteDir()
-  checkoutWebFolder.mkdirs()
+  exec {
+    commandLine('git', 'clone', 'git@github.com:ConnorWGarvey/gradle-grails-wrapper.git', '-b',
+        'gh-pages')
+    workingDir checkoutFolder
+  }
+  assert checkoutRepositoryFolder.deleteDir()
+  checkoutPublishFolder.mkdirs()
   copy {
     from new File(project.buildDir.path + sep + 'libs')
-    into checkoutWebFolder
+    into checkoutPublishFolder
   }
-  def command = 'git add .'
-  logger.info(command)
-  process = command.execute([], checkoutProjectFolder)
-  process.waitFor()
-  assert process.exitValue() == 0
-  commandList = ['git', 'commit', '-m', "Released version ${project.version}"]
-  logger.info(commandList.join(' '))
-  process = commandList.execute([], checkoutProjectFolder)
-  process.waitFor()
-  assert process.exitValue() == 0
-  command = 'git push'
-  logger.info(command)
-  //process = command.execute([], checkoutProjectFolder)
-  //process.waitFor()
-  //assert process.exitValue() == 0
+  exec {
+    commandLine 'git', 'add', '.'
+    workingDir checkoutProjectFolder
+  }
+  exec {
+    commandLine 'git', 'commit', '-m', "Released version ${project.version}"
+    workingDir checkoutProjectFolder
+  }
+  exec {
+    commandLine 'git', 'push'
+    workingDir checkoutProjectFolder
+  }
 }
 
 task wrapper(type: Wrapper) {
