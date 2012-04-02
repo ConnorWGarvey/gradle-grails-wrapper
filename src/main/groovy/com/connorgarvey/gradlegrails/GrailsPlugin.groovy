@@ -30,6 +30,8 @@ class GrailsPlugin implements Plugin<Project> {
       command.addAll(args)
       commandLine command
       standardInput System.in
+      group 'Grails'
+      description "Run Grails ${target}"
     }
     task.dependsOn('install-grails')
   }
@@ -151,6 +153,7 @@ class GrailsPlugin implements Plugin<Project> {
   private File downloadZip(String homePath, String version) {
     File zipFile = new File(Path.join(homePath, 'archive', "${version}.zip"))
     if (!zipFile.exists()) {
+      println "Downloading Grails ${version}"
       if (!zipFile.parentFile.exists() && !zipFile.parentFile.mkdirs()) {
         throw new IllegalStateException("Could not create ${zipFile.path}")
       }
