@@ -22,7 +22,7 @@ apply plugin: 'idea'
 apply plugin: 'maven'
 
 group = 'com.connorgarvey.gradle'
-version = '0.1-SNAPSHOT'
+version = '0.1'
 
 repositories { 
   mavenCentral()
