@@ -1,7 +1,7 @@
 Gradle Grails Wrapper
 =====================
 
-This is a plugin for [Gradle](http://www.gradle.org) that builds [Grails](http://www.grails.org) applications.  It differs from gradle-grails-plugin in that it is much simpler so that, hopefully, it will be more functional.
+This is a plugin for [Gradle](http://www.gradle.org) that builds [Grails](http://www.grails.org) applications.  It allows you to use Gradle as a build tool and allows you to use multiple versions of Grails on one machine without specifying full `grails` paths.
 
 Applying the plugin
 -------------------
@@ -42,3 +42,8 @@ execute one command** since all arguments will be passed to all commands.
 
     gradle create-app -Parg0=appName
     gradle create-app --project-prop arg0=appName
+
+How it works
+------------
+
+When executed, the plugin downloads a copy of Grails to a `.gradlegrails` folder in the user's home directory.  It can maintain multiple versions of Grails on the same machine.  It executes the specified command on the downloaded copy.
