@@ -13,7 +13,7 @@ Applying the plugin
       }
 
       dependencies {
-        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:0.1'
+        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:0.2'
       }
     }
     

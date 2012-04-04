@@ -17,7 +17,7 @@ import org.gradle.api.tasks.Exec
 class GrailsPlugin implements Plugin<Project> {
   
   private void addTask(Project project, String target) {
-    Task task = project.task([type:Exec], target) {
+    Task task = project.task(target) << {
       project.grails.configure()
       String grailsFolder = makeGrailsPath(project.grails.version)
       String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
@@ -28,8 +28,12 @@ class GrailsPlugin implements Plugin<Project> {
         target
       ]
       command.addAll(args)
-      commandLine command
-      standardInput System.in
+      project.exec {
+        commandLine command
+        standardInput = System.in
+      }
+    }
+    task.configure {
       group 'Grails'
       description "Run Grails ${target}"
     }
@@ -151,19 +155,17 @@ class GrailsPlugin implements Plugin<Project> {
   }
   
   private File downloadZip(String homePath, String version) {
+    println "Downloading Grails ${version}"
     File zipFile = new File(Path.join(homePath, 'archive', "${version}.zip"))
-    if (!zipFile.exists()) {
-      println "Downloading Grails ${version}"
-      if (!zipFile.parentFile.exists() && !zipFile.parentFile.mkdirs()) {
-        throw new IllegalStateException("Could not create ${zipFile.path}")
-      }
-      OutputStream file = new FileOutputStream(zipFile)
-      OutputStream out = new BufferedOutputStream(file)
-      out << new URL(
-          "http://dist.springframework.org.s3.amazonaws.com/release/GRAILS/grails-${version}.zip").
-          openStream()
-      out.close()
+    if (!zipFile.parentFile.exists() && !zipFile.parentFile.mkdirs()) {
+      throw new IllegalStateException("Could not create ${zipFile.path}")
     }
+    OutputStream file = new FileOutputStream(zipFile)
+    OutputStream out = new BufferedOutputStream(file)
+    out << new URL(
+        "http://dist.springframework.org.s3.amazonaws.com/release/GRAILS/grails-${version}.zip").
+        openStream()
+    out.close()
     return zipFile
   }
   
