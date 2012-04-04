@@ -26,10 +26,10 @@ By default, the plugin will select a version of Grails.  To specify a version, a
 Using the plugin
 ----------------
 
-The plugin adds standard Grails build commands to the Gradle build.  Run them like this.
+The plugin adds standard Grails build commands to the Gradle build, prefixed with `grails-`.  Run them like this.
 
-    gradle create-app
-    gradle war
+    gradle grails-create-app
+    gradle grails-war
 
 **To get a full list of commands, run this.**
 
@@ -38,8 +38,8 @@ The plugin adds standard Grails build commands to the Gradle build.  Run them li
 Specify command line arguments either of these ways.  **If specifying arguments, you may only
 execute one command** since all arguments will be passed to all commands.
 
-    gradle create-app -Parg0=appName
-    gradle create-app --project-prop arg0=appName
+    gradle grails-create-app -Parg0=appName
+    gradle grails-create-app --project-prop arg0=appName
 
 How it works
 ------------
