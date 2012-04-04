@@ -17,7 +17,7 @@ import org.gradle.api.tasks.Exec
 class GrailsPlugin implements Plugin<Project> {
   
   private void addTask(Project project, String target) {
-    Task task = project.task(target) << {
+    Task task = project.task("grails-${target}") << {
       project.grails.configure()
       String grailsFolder = makeGrailsPath(project.grails.version)
       String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''

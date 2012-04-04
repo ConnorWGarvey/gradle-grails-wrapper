@@ -11,12 +11,10 @@ Applying the plugin
         mavenCentral()
         maven { url 'http://connorwgarvey.github.com/gradle-grails-wrapper/repo/' }
       }
-
       dependencies {
-        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:0.2'
+        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:0.3'
       }
     }
-    
     apply plugin: 'grails'
 
 By default, the plugin will select a version of Grails.  To specify a version, add this to the build.
