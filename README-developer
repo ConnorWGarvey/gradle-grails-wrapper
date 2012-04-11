@@ -1,0 +1,13 @@
+Publishing to Sonatype:
+-----------------------
+
+1. Copy the GPG keys to a folder and `cd` to it.
+2. Run `gpg --import com.connorgarvey.public.key`
+3. Run `gpg --allow-secret-key-import --import com.connorgarvey.private.key`
+4. Run `gpg --list-keys`.  The string after the first `/` after `pub` is the key ID used in the next step.
+5. Create the file ~/.gradle/gradle.properties if it doesn't already exist.
+  a. Add the properties `com.connorgarvey.sonatype.userName` and `com.connorgarvey.sonatype.password` with the correct
+      values
+  b. Add `signing.keyId`, `signing.password`, `signing.secretKeyRingFile=/home/me/.gnupg/secring.gpg`
+6. If applicable, add `-SNAPSHOT` to the version number.
+7. Run `./gradlew uploadArchives`

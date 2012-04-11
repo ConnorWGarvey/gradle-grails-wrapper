@@ -15,14 +15,17 @@ import org.apache.commons.vfs2.FileObject
 import org.apache.commons.vfs2.FileSystemManager
 import org.apache.commons.vfs2.Selectors
 import org.apache.commons.vfs2.VFS
+import org.gradle.plugins.signing.Sign
 
 apply plugin: 'eclipse'
 apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'maven'
+apply plugin: 'signing'
 
 group = 'com.connorgarvey.gradle'
 version = '0.3'
+description = 'A plugin for Gradle to build Grails projects'
 
 repositories {
   mavenCentral()
@@ -43,6 +46,10 @@ dependencies {
   )
 }
 
+signing {
+  sign configurations.archives
+}
+
 task writePom << {
   pom {
     project {
@@ -58,7 +65,95 @@ task writePom << {
   }.writeTo("${buildDir}/libs/${project.name}-${project.version}.pom")
 }
 
-task publish(dependsOn:[clean, build, writePom]) << {
+def pomConfig = {
+  name project.name
+  description project.description
+  packaging 'jar'
+  url 'http://connorwgarvey.github.com/gradle-grails-wrapper/'
+  inceptionYear '2012'
+  licenses {
+    license {
+      name 'The Apache Software License, Version 2.0'
+      url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+      distribution 'repo'
+    }
+  }
+  scm {
+    connection 'scm:git:git@github.com:ConnorWGarvey/gradle-grails-wrapper.git'
+    developerConnection 'scm:git:git@github.com:ConnorWGarvey/gradle-grails-wrapper.git'
+    url 'git@github.com:ConnorWGarvey/gradle-grails-wrapper.git'
+  }
+  developers {
+    developer {
+      id 'ConnorWGarvey'
+      name 'Connor Garvey'
+      email 'connorwgarvey@gmail.com'
+      url 'http://www.connorgarvey.com'
+      organization 'Rearden Commerce'
+      organizationUrl 'http://www.reardencommerce.com'
+      roles {
+        role 'developer'
+      }
+      timezone '-6'
+    }
+  }
+  parent {
+    groupId 'org.sonatype.oss'
+    artifactId 'oss-parent'
+    version '7'
+  }
+}
+
+basePomConfig = pomConfig  
+
+configure(install.repositories.mavenInstaller) {
+  pom.project pomConfig
+}
+
+uploadArchives {
+  if (project.hasProperty('com.connorgarvey.sonatype.userName') &&
+      project.hasProperty('com.connorgarvey.sonatype.password')) {
+    dependsOn << [signArchives]
+    repositories.mavenDeployer {
+      beforeDeployment { deployment ->
+        signPom(deployment)
+        for (signTask in project.tasks.withType(Sign)) {
+          for (signature in signTask.signatures) {
+            deployment.addArtifact(signature)
+          }
+        }
+      }
+      name = 'Maven Central Deployer'
+      configuration = configurations.archives
+      repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2') {
+        authentication(userName: project.'com.connorgarvey.sonatype.userName', password: project.'com.connorgarvey.sonatype.password')
+      }
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
+        authentication(userName: project.'com.connorgarvey.sonatype.userName', password: project.'com.connorgarvey.sonatype.password')
+      }
+      pom.project pomConfig
+    }
+  }
+  else {
+    throw new IllegalStateException('Please follow the instructions in README-developer.')
+  }
+}
+
+task sourceJar(type: Jar) {
+  classifier = 'sources'
+  from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn:javadoc) {
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+}
+
+artifacts {
+  archives jar, sourceJar, javadocJar
+}
+
+task publishToGitHub(dependsOn:[clean, build, writePom]) << {
   def sep = File.separator
   File checkoutFolder = new File(project.buildDir.canonicalPath + sep + 'artifactPublish')
   File checkoutProjectFolder = new File(checkoutFolder.canonicalPath + sep + 'gradle-grails-wrapper')
