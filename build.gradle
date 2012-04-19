@@ -24,7 +24,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group = 'com.connorgarvey.gradle'
-version = '0.3'
+version = '0.4'
 description = 'A plugin for Gradle to build Grails projects'
 
 repositories {
@@ -47,7 +47,10 @@ dependencies {
 }
 
 signing {
-  sign configurations.archives
+  if (project.hasProperty('com.connorgarvey.sonatype.userName') &&
+      project.hasProperty('com.connorgarvey.sonatype.password')) {
+    sign configurations.archives
+  }
 }
 
 task writePom << {
@@ -133,9 +136,6 @@ uploadArchives {
       }
       pom.project pomConfig
     }
-  }
-  else {
-    throw new IllegalStateException('Please follow the instructions in README-developer.')
   }
 }
 

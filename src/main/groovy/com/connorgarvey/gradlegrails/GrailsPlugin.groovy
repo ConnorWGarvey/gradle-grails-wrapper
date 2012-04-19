@@ -28,8 +28,11 @@ class GrailsPlugin implements Plugin<Project> {
         target
       ]
       command.addAll(args)
+      Map<String, String> env = new HashMap(System.getenv())
+      env['GRAILS_HOME'] = grailsFolder
       project.exec {
         commandLine command
+        environment env
         standardInput = System.in
       }
     }
@@ -143,13 +146,14 @@ class GrailsPlugin implements Plugin<Project> {
   private String download(String version) {
     FileSystemManager manager = VFS.manager
     String homePath = Path.join(SystemUtils.userHome.path, '.gradlegrails')
-    FileObject destination = manager.resolveFile("file://" + Path.join(homePath, 'grails', version))
+    String destinationPath = Path.join(homePath, 'grails', version)
+    FileObject destination = manager.resolveFile(destinationPath)
     if (destination.exists()) {
       return destination.name.path
     }
     File zipFile = downloadZip(homePath, version)
     FileObject zip = manager.resolveFile("zip:file://${zipFile.path}")
-    unzipGrails(homePath, zip, destination)
+    unzipGrails(homePath, zip, destinationPath)
     makeGrailsExecutable(destination.name.path)
     return destination.name.path
   }
@@ -157,6 +161,9 @@ class GrailsPlugin implements Plugin<Project> {
   private File downloadZip(String homePath, String version) {
     println "Downloading Grails ${version}"
     File zipFile = new File(Path.join(homePath, 'archive', "${version}.zip"))
+    if (zipFile.exists()) {
+      return zipFile
+    }
     if (!zipFile.parentFile.exists() && !zipFile.parentFile.mkdirs()) {
       throw new IllegalStateException("Could not create ${zipFile.path}")
     }
@@ -181,7 +188,7 @@ class GrailsPlugin implements Plugin<Project> {
     Path.join(SystemUtils.userHome.path, '.gradlegrails', 'grails', version)
   }
   
-  private void unzipGrails(String homePath, FileObject zip, FileObject destination) {
+  private void unzipGrails(String homePath, FileObject zip, String destinationPath) {
     FileSystemManager manager = VFS.manager
     FileObject temporary = manager.resolveFile(Path.join(homePath, 'tmp'))
     temporary.copyFrom(zip, Selectors.SELECT_ALL)
@@ -190,7 +197,7 @@ class GrailsPlugin implements Plugin<Project> {
       grailsHome = grailsHome.children[0]
     }
     for (child in grailsHome.children) {
-      manager.resolveFile(Path.join(destination.name.path, child.name.baseName)).copyFrom(child, Selectors.SELECT_ALL)
+      manager.resolveFile(Path.join(destinationPath, child.name.baseName)).copyFrom(child, Selectors.SELECT_ALL)
     }
     temporary.delete(Selectors.SELECT_ALL)
   }
