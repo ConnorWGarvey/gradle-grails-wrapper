@@ -161,9 +161,6 @@ class GrailsPlugin implements Plugin<Project> {
   private File downloadZip(String homePath, String version) {
     println "Downloading Grails ${version}"
     File zipFile = new File(Path.join(homePath, 'archive', "${version}.zip"))
-    if (zipFile.exists()) {
-      return zipFile
-    }
     if (!zipFile.parentFile.exists() && !zipFile.parentFile.mkdirs()) {
       throw new IllegalStateException("Could not create ${zipFile.path}")
     }
