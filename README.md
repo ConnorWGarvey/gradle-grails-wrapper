@@ -3,8 +3,6 @@ Gradle Grails Wrapper
 
 This is a plugin for [Gradle](http://www.gradle.org) that builds [Grails](http://www.grails.org) applications.  It allows you to use Gradle as a build tool and allows you to use multiple versions of Grails on one machine without specifying full `grails` paths.
 
-*Now in Maven Central!*
-
 Applying the plugin
 -------------------
 
@@ -13,7 +11,7 @@ Applying the plugin
         mavenCentral()
       }
       dependencies {
-        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:0.3'
+        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:0.4.1'
       }
     }
     apply plugin: 'grails'
@@ -21,7 +19,7 @@ Applying the plugin
 By default, the plugin will select a version of Grails.  To specify a version, add this to the build.
 
     grails {
-      version '2.0.2'
+      version '2.0.3'
     }
 
 Using the plugin
@@ -41,6 +39,12 @@ execute one command** since all arguments will be passed to all commands.
 
     gradle grails-create-app -Parg0=appName
     gradle grails-create-app --project-prop arg0=appName
+
+What's new
+----------
+
+* 0.4.1: Windows compatibility fixes
+* 0.3: First released version
 
 How it works
 ------------
