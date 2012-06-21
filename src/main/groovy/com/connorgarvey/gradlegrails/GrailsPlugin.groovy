@@ -22,11 +22,13 @@ class GrailsPlugin implements Plugin<Project> {
       String grailsFolder = makeGrailsPath(project.grails.version)
       String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
       List<String> args = collectArguments(project)
-      List<String> command =[
+      List<String> systemProperties = collectSystemProperties(project)
+      List<String> command = [
         Path.join(grailsFolder, 'bin', "grails${extension}"),
-        '-plain-output',
-        target
+        '-plain-output'
       ]
+      command.addAll(systemProperties.collect { "-D${it}" })
+      command.add(target)
       command.addAll(args)
       Map<String, String> env = new HashMap(System.getenv())
       env['GRAILS_HOME'] = grailsFolder
@@ -44,16 +46,24 @@ class GrailsPlugin implements Plugin<Project> {
   }
   
   private List<String> collectArguments(Project project) {
+    collectProperties(project, 'arg')
+  }
+  
+  private List<String> collectProperties(Project project, String prefix) {
     List<String> result = []
     int index = 0
     try {
       while (true) {
-        result << project."arg${index++}"
+        result << project."${prefix}${index++}"
       }
     }
     catch (MissingPropertyException ex) {
     }
     return result
+  }
+  
+  private List<String> collectSystemProperties(Project project) {
+    collectProperties(project, 'd')
   }
   
   @Override

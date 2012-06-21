@@ -5,7 +5,7 @@ buildscript {
   }
   dependencies {
     classpath(
-      'com.connorgarvey.gradle:gradle-grails-wrapper:0.4.2',
+      'com.connorgarvey.gradle:gradle-grails-wrapper:1.0',
     )
   }
 }

@@ -24,7 +24,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group = 'com.connorgarvey.gradle'
-version = '0.4.2'
+version = '1.0'
 description = 'A plugin for Gradle to build Grails projects'
 
 repositories {
@@ -200,18 +200,50 @@ class IntegrationTestTask extends DefaultTask {
         }
     }
     
-    private void buildGrailsWar() {
+    private void grailsClean(String gradle, String directory) {
+      project.exec {
+        commandLine = [gradle, '--stacktrace', 'grails-clean']
+        workingDir = directory
+      }
+      File target = new File(pathJoin('src', 'integrationTest', 'project', 'target'))
+      for (file in target.listFiles()) {
+        if (file.isDirectory()) file.deleteDir()
+        else file.delete()
+      }
+      assert !warExists()
+    }
+    
+    private void grailsCleanBeforeEach(String gradle, String directory, List<Closure> actions) {
+      for (action in actions) {
+        grailsClean(gradle, directory)
+        action()
+      }
+    }
+    
+    private void verifyGrailsWar() {
         String directory = new File(pathJoin('src', 'integrationTest', 'project')).canonicalPath
         String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
         String gradle = "${directory}${File.separator}gradlew${extension}"
+        grailsClean(gradle, directory)
         project.exec {
-            commandLine gradle, '--stacktrace', 'grails-clean'
-            workingDir directory
+          commandLine = [gradle, '--stacktrace', 'grails-war']
+          workingDir = directory
         }
+        assert warExists()
+        grailsClean(gradle, directory)
         project.exec {
-            commandLine gradle, '--stacktrace', 'grails-war'
-            workingDir directory
+          commandLine = [gradle, '--stacktrace', 'grails-war', '-Parg0="target/haldo"']
+          workingDir = directory
         }
+        assert fileExists('src', 'integrationTest', 'project', 'target', 'haldo')
+        grailsClean(gradle, directory)
+        def stdout = new ByteArrayOutputStream()
+        project.exec {
+          commandLine = [gradle, '--stacktrace', 'grails-war', '-Pd0="grails.env=wat"']
+          workingDir = directory
+          standardOutput = stdout
+        }
+        assert stdout.toString().contains('Environment set to wat')
     }
     
     private String pathJoin(String... parts) {
@@ -231,14 +263,17 @@ class IntegrationTestTask extends DefaultTask {
         vfsCopy("${originType}://${originPath}", "${destinationType}://${destinationPath}")
     }
     
-    private void verifyExists(String... path) {
+    private boolean fileExists(String... path) {
         File file = new File(pathJoin(path))
-        assert file.isFile()
+        file.isFile()
+    }
+    
+    private boolean warExists() {
+      fileExists('src', 'integrationTest', 'project', 'target', 'project-0.1.war')
     }
     
     @TaskAction
     void integrationTest() {
-        buildGrailsWar()
-        verifyExists('src', 'integrationTest', 'project', 'target', 'project-0.1.war')
+        verifyGrailsWar()
     }
 }
