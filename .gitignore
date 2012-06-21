@@ -4,3 +4,5 @@
 .settings
 bin
 build
+src/integrationTest/project/stacktrace.log
+src/integrationTest/project/target/*

@@ -1,10 +1,11 @@
 buildscript {
   repositories {
+    mavenLocal()
     mavenCentral()
   }
   dependencies {
     classpath(
-      'com.connorgarvey.gradle:gradle-grails-wrapper:#{gradleGrailsWrapperVersion}',
+      'com.connorgarvey.gradle:gradle-grails-wrapper:0.4.2',
     )
   }
 }
@@ -12,9 +13,9 @@ buildscript {
 apply plugin: 'grails'
 
 grails {
-  version '#{grailsVersion}'
+  version '2.0.3'
 }
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '#{gradleVersion}'
+  gradleVersion = '1.0-milestone-9'
 }

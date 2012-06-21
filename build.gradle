@@ -24,7 +24,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group = 'com.connorgarvey.gradle'
-version = '0.4.1'
+version = '0.4.2'
 description = 'A plugin for Gradle to build Grails projects'
 
 repositories {
@@ -107,8 +107,6 @@ def pomConfig = {
   }
 }
 
-basePomConfig = pomConfig  
-
 configure(install.repositories.mavenInstaller) {
   pom.project pomConfig
 }
@@ -153,6 +151,8 @@ artifacts {
   archives jar, sourceJar, javadocJar
 }
 
+task integrationTest(dependsOn:[install], type:IntegrationTestTask) { }
+
 task publishToGitHub(dependsOn:[clean, build, writePom]) << {
   def sep = File.separator
   File checkoutFolder = new File(project.buildDir.canonicalPath + sep + 'artifactPublish')
@@ -188,5 +188,57 @@ task publishToGitHub(dependsOn:[clean, build, writePom]) << {
 }
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '1.0-milestone-9'
+  gradleVersion = '1.0'
+}
+
+class IntegrationTestTask extends DefaultTask {
+    private void appendOutput(InputStream inputStream, Appendable builder) {
+        String s = null
+        BufferedReader input = new BufferedReader(new InputStreamReader(inputStream))
+        while ((s = input.readLine()) != null) {
+            builder.append(s + '\n')
+        }
+    }
+    
+    private void buildGrailsWar() {
+        String directory = new File(pathJoin('src', 'integrationTest', 'project')).canonicalPath
+        String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
+        String gradle = "${directory}${File.separator}gradlew${extension}"
+        project.exec {
+            commandLine gradle, '--stacktrace', 'grails-clean'
+            workingDir directory
+        }
+        project.exec {
+            commandLine gradle, '--stacktrace', 'grails-war'
+            workingDir directory
+        }
+    }
+    
+    private String pathJoin(String... parts) {
+        Arrays.asList(parts).join(File.separator)
+    }
+    
+    private vfsCopy(String originUri, String destinationUri) {
+        FileSystemManager manager = VFS.manager
+        FileObject origin = manager.resolveFile(originUri)
+        FileObject destination = manager.resolveFile(destinationUri)
+        destination.copyFrom(origin, Selectors.SELECT_ALL)
+    }
+    
+    private vfsTypeCopy(String originPath, String originType, String destinationPath, String destinationType) {
+        originPath = new File(originPath).canonicalPath
+        destinationPath = new File(destinationPath).canonicalPath
+        vfsCopy("${originType}://${originPath}", "${destinationType}://${destinationPath}")
+    }
+    
+    private void verifyExists(String... path) {
+        File file = new File(pathJoin(path))
+        assert file.isFile()
+    }
+    
+    @TaskAction
+    void integrationTest() {
+        buildGrailsWar()
+        verifyExists('src', 'integrationTest', 'project', 'target', 'project-0.1.war')
+    }
 }
