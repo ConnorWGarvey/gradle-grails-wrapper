@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Gradle-grails-wrapper : A simple Grails plugin for Gradle" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Gradle-grails-wrapper</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/ConnorWGarvey/gradle-grails-wrapper">View on GitHub</a>
+
+          <h1 id="project_title">Gradle-grails-wrapper</h1>
+          <h2 id="project_tagline">A simple Grails plugin for Gradle</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/ConnorWGarvey/gradle-grails-wrapper/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/ConnorWGarvey/gradle-grails-wrapper/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>Gradle Grails Wrapper</h1>
+
+<p>This is a plugin for <a href="http://www.gradle.org">Gradle</a> that builds <a href="http://www.grails.org">Grails</a> applications.  It allows you to use Gradle as a build tool and allows you to use multiple versions of Grails on one machine without specifying full <code>grails</code> paths.</p>
+
+<h2>Applying the plugin</h2>
+
+<pre><code>buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:1.0'
+  }
+}
+apply plugin: 'grails'
+</code></pre>
+
+<p>By default, the plugin will select a version of Grails.  To specify a version, add this to the build.</p>
+
+<pre><code>grails {
+  version '2.0.3'
+}
+</code></pre>
+
+<h2>Using the plugin</h2>
+
+<p>The plugin adds standard Grails build commands to the Gradle build, prefixed with <code>grails-</code>.  Run them like this.</p>
+
+<pre><code>gradle grails-create-app
+gradle grails-war
+</code></pre>
+
+<p><strong>To get a full list of commands, run this.</strong></p>
+
+<pre><code>gradle tasks
+</code></pre>
+
+<p>Specify command line arguments either of these ways.  <strong>If specifying arguments, you should only execute one command</strong>
+since all arguments will be passed to all commands.  Instead of <code>grails create-app appName</code>, use</p>
+
+<pre><code>gradle grails-create-app -Parg0=appName
+gradle grails-create-app --project-prop arg0=appName
+</code></pre>
+
+<p>Specify system parameters like this.  Instead of <code>grails -Dgrails.env=test grails-war</code>, use</p>
+
+<pre><code>gradle grails-war -Pd0=grails.env=test
+gradle grails-war --project-prop d0=grails.env=test
+</code></pre>
+
+<p><em>Arguments must be specified in this way in Gradle. If the command were <strong>gradle grails-war hello.war</strong>, Gradle would
+see <strong>hello.war</strong> as another task to be executed.</em></p>
+
+<h2>What's new</h2>
+
+<ul>
+<li>1.0: Added the ability to specify system parameters on the command line and added integration tests</li>
+<li>0.4.1: Windows compatibility fixes</li>
+<li>0.3: First released version</li>
+</ul><h2>How it works</h2>
+
+<p>When executed, the plugin downloads a copy of Grails to a <code>.gradlegrails</code> folder in the user's home directory.  It can
+maintain multiple versions of Grails on the same machine.  It executes the specified command on the downloaded copy.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Gradle-grails-wrapper maintained by <a href="https://github.com/ConnorWGarvey">ConnorWGarvey</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
