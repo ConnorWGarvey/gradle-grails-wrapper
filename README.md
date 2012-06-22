@@ -43,6 +43,7 @@ since all arguments will be passed to all commands.  Instead of `grails create-a
 Specify system parameters like this.  Instead of `grails -Dgrails.env=test grails-war`, use
 
     gradle grails-war -Pd0=grails.env=test
+    gradle grails-war --project-prop d0=grails.env=test
 
 _Arguments must be specified in this way in Gradle. If the command were **gradle grails-war hello.war**, Gradle would
 see **hello.war** as another task to be executed._
