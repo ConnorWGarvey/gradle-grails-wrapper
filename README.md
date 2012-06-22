@@ -11,7 +11,7 @@ Applying the plugin
         mavenCentral()
       }
       dependencies {
-        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:0.4.1'
+        classpath 'com.connorgarvey.gradle:gradle-grails-wrapper:1.0'
       }
     }
     apply plugin: 'grails'
@@ -35,10 +35,14 @@ The plugin adds standard Grails build commands to the Gradle build, prefixed wit
     gradle tasks
 
 Specify command line arguments either of these ways.  **If specifying arguments, you should only execute one command**
-since all arguments will be passed to all commands.
+since all arguments will be passed to all commands.  Instead of `grails create-app appName`, use
 
     gradle grails-create-app -Parg0=appName
     gradle grails-create-app --project-prop arg0=appName
+
+Specify system parameters like this.  Instead of `grails -Dgrails.env=test grails-war`, use
+
+    gradle grails-war -Pd0=grails.env=test
 
 _Arguments must be specified in this way in Gradle. If the command were **gradle grails-war hello.war**, Gradle would
 see **hello.war** as another task to be executed._
@@ -46,6 +50,7 @@ see **hello.war** as another task to be executed._
 What's new
 ----------
 
+* 1.0: Added the ability to specify system parameters on the command line and added integration tests
 * 0.4.1: Windows compatibility fixes
 * 0.3: First released version
 
