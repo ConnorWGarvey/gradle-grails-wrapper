@@ -34,11 +34,14 @@ The plugin adds standard Grails build commands to the Gradle build, prefixed wit
 
     gradle tasks
 
-Specify command line arguments either of these ways.  **If specifying arguments, you may only
-execute one command** since all arguments will be passed to all commands.
+Specify command line arguments either of these ways.  **If specifying arguments, you should only execute one command**
+since all arguments will be passed to all commands.
 
     gradle grails-create-app -Parg0=appName
     gradle grails-create-app --project-prop arg0=appName
+
+_Arguments must be specified in this way in Gradle. If the command were **gradle grails-war hello.war**, Gradle would
+see **hello.war** as another task to be executed._
 
 What's new
 ----------
@@ -49,4 +52,5 @@ What's new
 How it works
 ------------
 
-When executed, the plugin downloads a copy of Grails to a `.gradlegrails` folder in the user's home directory.  It can maintain multiple versions of Grails on the same machine.  It executes the specified command on the downloaded copy.
+When executed, the plugin downloads a copy of Grails to a `.gradlegrails` folder in the user's home directory.  It can
+maintain multiple versions of Grails on the same machine.  It executes the specified command on the downloaded copy.
