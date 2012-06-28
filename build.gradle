@@ -24,7 +24,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group = 'com.connorgarvey.gradle'
-version = '1.0'
+version = '1.1'
 description = 'A plugin for Gradle to build Grails projects'
 
 repositories {
