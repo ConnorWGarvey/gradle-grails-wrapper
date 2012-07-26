@@ -21,11 +21,12 @@ class GrailsPlugin implements Plugin<Project> {
       project.grails.configure()
       String grailsFolder = makeGrailsPath(project.grails.version)
       String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
+      String plainOutput = project.grails.version.startsWith('1.3.') ? '' : '-plain-output'
       List<String> args = collectArguments(project)
       List<String> systemProperties = collectSystemProperties(project)
       List<String> command = [
         Path.join(grailsFolder, 'bin', "grails${extension}"),
-        '-plain-output'
+        plainOutput
       ]
       command.addAll(systemProperties.collect { "-D${it}" })
       command.add(target)
@@ -131,7 +132,8 @@ class GrailsPlugin implements Plugin<Project> {
   private void build(Project project, String target) {
     String grailsFolder = makeGrailsPath(project.grails.version)
     String extension = SystemUtils.IS_OS_WINDOWS ? '.bat' : ''
-    Process process = "${Path.join(grailsFolder, 'bin', 'grails' + extension)} -plain-output ${target}".execute()
+    String plainOutput = project.grails.version.startsWith('1.3.') ? '' : '-plain-output'
+    Process process = "${Path.join(grailsFolder, 'bin', 'grails' + extension)} ${plainOutput} ${target}".execute()
     String s = null
     StringBuilder output = new StringBuilder()
     BufferedReader input = new BufferedReader(new InputStreamReader(process.inputStream))
